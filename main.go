@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type CategoryFilter string
@@ -29,16 +31,6 @@ type Transaction struct {
 	Amount      float64 `json:"amount"`
 }
 
-type TransactionList struct {
-	transactions []Transaction
-}
-
-func NewTransactionList(transactions []Transaction) *TransactionList {
-	return &TransactionList{
-		transactions: transactions,
-	}
-}
-
 func returnFloat(s string) float64 {
 	num, _ := strconv.ParseFloat(s, 64)
 	return num
@@ -49,14 +41,6 @@ func Filter(t Transaction, categoryFilter CategoryFilter, filterFunc func(t Tran
 		return true
 	}
 	return false
-}
-
-func (tl *TransactionList) sum() float64 {
-	sum := 0.0
-	for _, transaction := range tl.transactions {
-		sum += transaction.Amount
-	}
-	return sum
 }
 
 func sumTransactions(transactions []Transaction) float64 {
@@ -91,8 +75,20 @@ func createCategorizedTransactionsList(transactions []Transaction, categoryFilte
 	return categorizedTransactions
 }
 
+func init() {
+	// Log as JSON instead of the default ASCII formatter.
+	log.SetFormatter(&log.JSONFormatter{})
+
+	// Output to stdout instead of the default stderr
+	// Can be any io.Writer, see below for File example
+	log.SetOutput(os.Stdout)
+
+}
+
 func main() {
 	fmt.Println("Hello world")
+	logger := log.New()
+	logger.Info("Hello World")
 
 	f, _ := os.Open("sheets/Chase0588_Activity20190319.CSV")
 
@@ -115,6 +111,7 @@ func main() {
 		if data.Amount > 0 {
 			continue //Filter out paying off credit card
 		}
+		logger.WithFields(log.Fields{"data": data}).Info("data", data)
 		allTransactions = append(allTransactions, data)
 
 	}
